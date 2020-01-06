@@ -46,7 +46,7 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-    #genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
+    # genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
     genres = db.Column(db.PickleType)
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
@@ -69,7 +69,7 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    #genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
+    # genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
     genres = db.Column(db.PickleType)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
@@ -95,6 +95,7 @@ class Show(db.Model):
     def __repr__(self):
         return f'<{self.id} {self.venue_id} {self.artist_id} ' \
                f'{self.start_time}>'
+
 
 # ----------------------------------------------------------------------------#
 # Filters.
@@ -132,7 +133,7 @@ def venues():
     venue_list = Venue.query.distinct('state', 'city').all()
     for venue in venue_list:
         venue_data = {
-            "city" : venue.city,
+            "city": venue.city,
             "state": venue.state,
             "venues": Venue.query.filter_by(city=venue.city).all()
         }
@@ -160,9 +161,7 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-
     data = Venue.query.filter_by(id=venue_id).first()
-
 
     # data1 = {
     #     "id": 1,
@@ -267,7 +266,7 @@ def create_venue_submission():
         address = request.form.get('address', '')
         phone = request.form.get('phone', '')
         genres = request.form.getlist('genres')
-        #genres = request.form.get('genres')
+        # genres = request.form.get('genres')
         # image_link = request.form.get('image_link', '')
         facebook_link = request.form.get('facebook_link', '')
         venue = Venue(name=name, city=city, state=state, address=address, phone=phone, genres=genres,
@@ -495,12 +494,30 @@ def create_artist_submission():
     # called upon submitting the new artist listing form
     # TODO: insert form data as a new Venue record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
+    error = False
+    try:
+        name = request.form.get('name', '')
+        city = request.form.get('city', '')
+        state = request.form.get('state', '')
+        phone = request.form.get('phone', '')
+        genres = request.form.getlist('genres')
+        facebook_link = request.form.get('facebook_link', '')
 
-    # on successful db insert, flash success
-    flash('Artist ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-    return render_template('pages/home.html')
+        artist = Artist(name=name, city=city, state=state, phone=phone, genres=genres,
+                        facebook_link=facebook_link)
+
+        db.session.add(artist)
+        db.session.commit()
+        flash('Artist ' + request.form['name'] + ' was successfully listed!')
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc.info)
+        flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
+    finally:
+        db.session.close()
+    if not error:
+        return render_template('pages/home.html')
 
 
 #  Shows
