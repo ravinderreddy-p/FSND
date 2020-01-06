@@ -3,6 +3,8 @@
 # ----------------------------------------------------------------------------#
 
 import json
+import sys
+
 import dateutil.parser
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
@@ -44,8 +46,8 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-    #genres = db.Column(db.String(120))
-    genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
+    #genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
+    genres = db.Column(db.PickleType)
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
     website = db.Column(db.String(120))
@@ -67,8 +69,8 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    #genres = db.Column(db.String(120))
-    genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
+    #genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
+    genres = db.Column(db.PickleType)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, default=False)
@@ -257,48 +259,54 @@ def create_venue_form():
 def create_venue_submission():
     # TODO: insert form data as a new Venue record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
-
-    name = request.form.get('name', '')
-    print(name)
-    city = request.form.get('city', '')
-    print(city)
-    state = request.form.get('state', '')
-    print(state)
-    address = request.form.get('address', '')
-    print(address)
-    phone = request.form.get('phone', '')
-    print(phone)
-    print(request.form.getlist('genres'))
-    genres = request.form.getlist('genres')
-    print(genres)
-    # image_link = request.form.get('image_link', '')
-    # print(image_link)
-    facebook_link = request.form.get('facebook_link', '')
-    print(facebook_link)
-
-    venue = Venue(name=name, city=city, state=state, address=address, phone=phone, genres=genres,
-                  facebook_link=facebook_link)
-
-    db.session.add(venue)
-
-    db.session.commit()
-
-    # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template('pages/home.html')
+    error = False
+    try:
+        name = request.form.get('name', '')
+        city = request.form.get('city', '')
+        state = request.form.get('state', '')
+        address = request.form.get('address', '')
+        phone = request.form.get('phone', '')
+        genres = request.form.getlist('genres')
+        #genres = request.form.get('genres')
+        # image_link = request.form.get('image_link', '')
+        facebook_link = request.form.get('facebook_link', '')
+        venue = Venue(name=name, city=city, state=state, address=address, phone=phone, genres=genres,
+                      facebook_link=facebook_link)
+        db.session.add(venue)
+        db.session.commit()
+        flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc.info)
+        flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.')
+    finally:
+        db.session.close()
+    if not error:
+        return render_template('pages/home.html')
 
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
     # TODO: Complete this endpoint for taking a venue_id, and using
     # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+    error = False
+    try:
+        Venue.query.filter_by(id=venue_id).delete()
+        db.session.commit()
+        flash('Venue ' + venue_id + ' was successfully Deleted')
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc.info)
+        flash('An error occurred. Venue ' + venue_id + ' could not be deleted.')
+    finally:
+        db.session.close()
+    if not error:
+        return render_template('pages/home.html')
 
     # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
     # clicking that button delete it from the db then redirect the user to the homepage
-    return None
 
 
 #  Artists
