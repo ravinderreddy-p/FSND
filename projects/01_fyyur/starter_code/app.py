@@ -163,6 +163,31 @@ def search_venues():
 def show_venue(venue_id):
     venue = Venue.query.filter_by(id=venue_id).first()
 
+    data1 = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show, Artist.id == Show.artist_id).join(Venue, Venue.id == venue_id).filter(Show.start_time < datetime.utcnow()).all()
+    p_shows = []
+
+    for d in data1:
+        x = {
+            "artist_id": d.id,
+            "artist_name": d.name,
+             "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "start_time": d.start_time.strftime("%d %b %Y %H:%M:%S.%f")
+        }
+        p_shows.append(x)
+
+    data2 = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show,Artist.id == Show.artist_id).join(Venue, Venue.id == venue_id).filter(Show.start_time > datetime.utcnow()).all()
+    f_shows = []
+
+    for d in data2:
+        y = {
+            "artist_id": d.id,
+            "artist_name": d.name,
+            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "start_time": d.start_time.strftime("%d %b %Y %H:%M:%S.%f")
+        }
+        f_shows.append(y)
+
+    # future_shows = Show.query.filter_by(Show.venue_id == venue_id).filter_by(Show.start_time > datetime.utcnow()).count()
     data = {
         "id": venue.id,
         "name": venue.name,
@@ -176,15 +201,16 @@ def show_venue(venue_id):
         "seeking_talent": venue.seeking_talent,
         "seeking_description": venue.seeking_description,
         "image_link": venue.image_link,
-        "past_shows": [{
-            "artist_id": 1,
-            "artist_name": "Guns N Petals",
-            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-            "start_time": "2019-05-21T21:30:00.000Z"
-        }],
-        "upcoming_shows": [],
-        "past_shows_count": 1,
-        "upcoming_shows_count": 0,
+        # "past_shows": [{
+        #     "artist_id": 1,
+        #     "artist_name": "Guns N Petals",
+        #     "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+        #     "start_time": "2019-05-21T21:30:00.000Z"
+        # }],
+        "past_shows": p_shows,
+        "upcoming_shows": f_shows,
+        "past_shows_count": len(p_shows),
+        "upcoming_shows_count": Show.query.filter(Show.venue_id == venue_id, Show.start_time > datetime.utcnow()).count()
     }
 
     return render_template('pages/show_venue.html', venue=data)
