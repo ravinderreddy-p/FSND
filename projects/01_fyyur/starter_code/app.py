@@ -164,7 +164,7 @@ def show_venue(venue_id):
 
     venue = Venue.query.filter_by(id=venue_id).first()
 
-    old_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show, Artist.id == Show.artist_id).join(Venue, Venue.id == venue_id).filter(Venue.id == venue_id).filter(Show.start_time < datetime.utcnow()).all()
+    old_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show, Artist.id == Show.artist_id).join(Venue, Venue.id == Show.venue_id).filter(Venue.id == venue_id).filter(Show.start_time < datetime.utcnow()).all()
 
     p_shows = []
 
@@ -177,7 +177,7 @@ def show_venue(venue_id):
         }
         p_shows.append(prev_show)
 
-    future_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show,Artist.id == Show.artist_id).join(Venue, Venue.id == venue_id).filter(Venue.id == venue_id).filter(Show.start_time > datetime.utcnow()).all()
+    future_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show,Artist.id == Show.artist_id).join(Venue, Venue.id == Show.venue_id).filter(Venue.id == venue_id).filter(Show.start_time > datetime.utcnow()).all()
 
     f_shows = []
 
