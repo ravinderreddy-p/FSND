@@ -163,9 +163,62 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-    data = Venue.query.filter_by(id=venue_id).first()
-    return render_template('pages/show_venue.html', venue=data)
 
+    venue = Venue.query.filter_by(id=venue_id).first()
+
+    old_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show, Artist.id == Show.artist_id).join(Venue, Venue.id == Show.venue_id).filter(Venue.id == venue_id).filter(Show.start_time < datetime.utcnow()).all()
+
+    p_shows = []
+
+    for p_show in old_shows:
+        prev_show = {
+            "artist_id": p_show.id,
+            "artist_name": p_show.name,
+             "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "start_time": p_show.start_time.strftime("%d %b %Y %H:%M:%S.%f")
+        }
+        p_shows.append(prev_show)
+
+    future_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show,Artist.id == Show.artist_id).join(Venue, Venue.id == Show.venue_id).filter(Venue.id == venue_id).filter(Show.start_time > datetime.utcnow()).all()
+
+    f_shows = []
+
+    for f_show in future_shows:
+        future_show = {
+            "artist_id": f_show.id,
+            "artist_name": f_show.name,
+            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "start_time": f_show.start_time.strftime("%d %b %Y %H:%M:%S.%f")
+        }
+        f_shows.append(future_show)
+
+    # future_shows = Show.query.filter_by(Show.venue_id == venue_id).filter_by(Show.start_time > datetime.utcnow()).count()
+    data = {
+        "id": venue.id,
+        "name": venue.name,
+        "genres": venue.genres,
+        "address": venue.address,
+        "city": venue.city,
+        "state": venue.state,
+        "phone": venue.phone,
+        "website": venue.website,
+        "facebook_link": venue.facebook_link,
+        "seeking_talent": venue.seeking_talent,
+        "seeking_description": venue.seeking_description,
+        "image_link": venue.image_link,
+        # "past_shows": [{
+        #     "artist_id": 1,
+        #     "artist_name": "Guns N Petals",
+        #     "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+        #     "start_time": "2019-05-21T21:30:00.000Z"
+        # }],
+        "past_shows": p_shows,
+        "upcoming_shows": f_shows,
+        "past_shows_count": len(p_shows),
+        "upcoming_shows_count": Show.query.filter(Show.venue_id == venue_id, Show.start_time > datetime.utcnow()).count()
+    }
+
+    return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
 #  ----------------------------------------------------------------
