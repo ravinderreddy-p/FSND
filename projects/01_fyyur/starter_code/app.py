@@ -161,31 +161,34 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
+
     venue = Venue.query.filter_by(id=venue_id).first()
 
-    data1 = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show, Artist.id == Show.artist_id).join(Venue, Venue.id == venue_id).filter(Show.start_time < datetime.utcnow()).all()
+    old_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show, Artist.id == Show.artist_id).join(Venue, Venue.id == venue_id).filter(Venue.id == venue_id).filter(Show.start_time < datetime.utcnow()).all()
+
     p_shows = []
 
-    for d in data1:
-        x = {
-            "artist_id": d.id,
-            "artist_name": d.name,
+    for p_show in old_shows:
+        prev_show = {
+            "artist_id": p_show.id,
+            "artist_name": p_show.name,
              "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-            "start_time": d.start_time.strftime("%d %b %Y %H:%M:%S.%f")
+            "start_time": p_show.start_time.strftime("%d %b %Y %H:%M:%S.%f")
         }
-        p_shows.append(x)
+        p_shows.append(prev_show)
 
-    data2 = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show,Artist.id == Show.artist_id).join(Venue, Venue.id == venue_id).filter(Show.start_time > datetime.utcnow()).all()
+    future_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show,Artist.id == Show.artist_id).join(Venue, Venue.id == venue_id).filter(Venue.id == venue_id).filter(Show.start_time > datetime.utcnow()).all()
+
     f_shows = []
 
-    for d in data2:
-        y = {
-            "artist_id": d.id,
-            "artist_name": d.name,
+    for f_show in future_shows:
+        future_show = {
+            "artist_id": f_show.id,
+            "artist_name": f_show.name,
             "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-            "start_time": d.start_time.strftime("%d %b %Y %H:%M:%S.%f")
+            "start_time": f_show.start_time.strftime("%d %b %Y %H:%M:%S.%f")
         }
-        f_shows.append(y)
+        f_shows.append(future_show)
 
     # future_shows = Show.query.filter_by(Show.venue_id == venue_id).filter_by(Show.start_time > datetime.utcnow()).count()
     data = {
