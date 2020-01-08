@@ -26,8 +26,6 @@ moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 
-# TODO: connect to a local postgresql database
-
 migrate = Migrate(app, db)
 
 
@@ -39,15 +37,14 @@ class Venue(db.Model):
     __tablename__ = 'venue'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
+    address = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-    # genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
-    genres = db.Column(db.PickleType)
+    genres = db.Column(db.PickleType, nullable=False)
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
     website = db.Column(db.String(120))
@@ -65,12 +62,11 @@ class Artist(db.Model):
     __tablename__ = 'artist'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    # genres = db.Column("genres", db.ARRAY(db.String()), nullable=False)
-    genres = db.Column(db.PickleType)
+    genres = db.Column(db.PickleType, nullable=False)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, default=False)
@@ -146,9 +142,16 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
+
+    # Get the searched venue term
     search_venue_term = request.form.get('search_term', '')
+
+    # Get all the venues from venue's table filtered by searched venue_term
     searched_venues_list = Venue.query.filter(Venue.name.ilike(f'%{search_venue_term}%')).all()
+
+    # Get the found resorts count.
     venues_count = len(searched_venues_list)
+
     data = []
     for venue in searched_venues_list:
         data.append(venue)
@@ -166,33 +169,45 @@ def show_venue(venue_id):
 
     venue = Venue.query.filter_by(id=venue_id).first()
 
-    old_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show, Artist.id == Show.artist_id).join(Venue, Venue.id == Show.venue_id).filter(Venue.id == venue_id).filter(Show.start_time < datetime.utcnow()).all()
+    # Get the past show & artist details for the given venue.
+    old_shows = Artist.query.with_entities(Artist.id, Artist.name, Artist.image_link, Show.start_time).\
+        join(Show, Artist.id == Show.artist_id).\
+        join(Venue, Venue.id == Show.venue_id).\
+        filter(Venue.id == venue_id).\
+        filter(Show.start_time < datetime.utcnow()).\
+        all()
 
     p_shows = []
-
     for p_show in old_shows:
         prev_show = {
             "artist_id": p_show.id,
             "artist_name": p_show.name,
-             "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "artist_image_link": p_show.image_link,
             "start_time": p_show.start_time.strftime("%d %b %Y %H:%M:%S.%f")
         }
         p_shows.append(prev_show)
 
-    future_shows = Artist.query.with_entities(Artist.id, Artist.name, Show.start_time).join(Show,Artist.id == Show.artist_id).join(Venue, Venue.id == Show.venue_id).filter(Venue.id == venue_id).filter(Show.start_time > datetime.utcnow()).all()
+    # Get the future show & artist details for the given venue.
+    future_shows = Artist.query.with_entities(Artist.id, Artist.name, Artist.image_link, Show.start_time).\
+        join(Show, Artist.id == Show.artist_id).\
+        join(Venue, Venue.id == Show.venue_id).\
+        filter(Venue.id == venue_id).\
+        filter(Show.start_time >= datetime.utcnow()).\
+        all()
 
     f_shows = []
-
     for f_show in future_shows:
         future_show = {
             "artist_id": f_show.id,
             "artist_name": f_show.name,
-            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "artist_image_link": f_show.image_link,
             "start_time": f_show.start_time.strftime("%d %b %Y %H:%M:%S.%f")
         }
         f_shows.append(future_show)
 
-    # future_shows = Show.query.filter_by(Show.venue_id == venue_id).filter_by(Show.start_time > datetime.utcnow()).count()
+    # Get the upcoming shows count
+    upcoming_shows_count = Show.query.filter(Show.venue_id == venue_id, Show.start_time > datetime.utcnow()).count()
+
     data = {
         "id": venue.id,
         "name": venue.name,
@@ -206,16 +221,10 @@ def show_venue(venue_id):
         "seeking_talent": venue.seeking_talent,
         "seeking_description": venue.seeking_description,
         "image_link": venue.image_link,
-        # "past_shows": [{
-        #     "artist_id": 1,
-        #     "artist_name": "Guns N Petals",
-        #     "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-        #     "start_time": "2019-05-21T21:30:00.000Z"
-        # }],
         "past_shows": p_shows,
         "upcoming_shows": f_shows,
         "past_shows_count": len(p_shows),
-        "upcoming_shows_count": Show.query.filter(Show.venue_id == venue_id, Show.start_time > datetime.utcnow()).count()
+        "upcoming_shows_count": upcoming_shows_count
     }
 
     return render_template('pages/show_venue.html', venue=data)
