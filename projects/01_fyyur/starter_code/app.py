@@ -313,10 +313,53 @@ def search_artists():
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
-    # shows the artist page with the given artist_id
-    # TODO: replace with real venue data from the venues table, using venue_id
+    artist = Artist.query.filter_by(id=artist_id).first()
 
-    data = Artist.query.filter_by(id=artist_id).first()
+    old_shows = Venue.query.with_entities(Venue.id, Venue.name, Show.start_time).join(Show,Venue.id == Show.venue_id).join(Artist, Artist.id == Show.artist_id).filter(Artist.id == artist_id).filter(Show.start_time < datetime.utcnow()).all()
+
+    p_shows = []
+
+    for p_show in old_shows:
+        prev_show = {
+            "venue_id": p_show.id,
+            "venue_name": p_show.name,
+            "venue_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "start_time": p_show.start_time.strftime("%d %b %Y %H:%M:%S.%f")
+        }
+        p_shows.append(prev_show)
+
+    future_shows = Venue.query.with_entities(Venue.id, Venue.name, Show.start_time).join(Show,Venue.id == Show.artist_id).join(Artist, Artist.id == Show.venue_id).filter(Artist.id == artist_id).filter(Show.start_time > datetime.utcnow()).all()
+
+    f_shows = []
+
+    for f_show in future_shows:
+        future_show = {
+            "venue_id": f_show.id,
+            "venue_name": f_show.name,
+            "venue_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+            "start_time": f_show.start_time.strftime("%d %b %Y %H:%M:%S.%f")
+        }
+        f_shows.append(future_show)
+
+    data = {
+        "id": artist.id,
+        "name": artist.name,
+        "genres": artist.genres,
+        "city": artist.city,
+        "state": artist.state,
+        "phone": artist.phone,
+        "website": artist.website,
+        "facebook_link": artist.facebook_link,
+        "seeking_venue": artist.seeking_venue,
+        "seeking_description": artist.seeking_description,
+        "image_link": artist.image_link,
+        "past_shows": p_shows,
+        "upcoming_shows": f_shows,
+        "past_shows_count": len(p_shows),
+        "upcoming_shows_count": Show.query.filter(Show.artist_id == artist_id,Show.start_time > datetime.utcnow()).count()
+
+    }
+
     return render_template('pages/show_artist.html', artist=data)
 
 
