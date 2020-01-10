@@ -309,7 +309,7 @@ def search_artists():
 def show_artist(artist_id):
     artist = Artist.query.filter_by(id=artist_id).first()
 
-    old_shows = Venue.query.with_entities(Venue.id, Venue.name, Show.start_time).\
+    old_shows = Venue.query.with_entities(Venue.id, Venue.name, Venue.image_link, Show.start_time).\
         join(Show,Venue.id == Show.venue_id).\
         join(Artist, Artist.id == Show.artist_id).\
         filter(Artist.id == artist_id).\
@@ -327,14 +327,18 @@ def show_artist(artist_id):
         p_shows.append(prev_show)
 
     future_shows = Venue.query.with_entities(Venue.id, Venue.name, Venue.image_link, Show.start_time).\
-        join(Show, Venue.id == Show.artist_id).\
-        join(Artist, Artist.id == Show.venue_id).\
+        join(Show, Venue.id == Show.venue_id).\
+        join(Artist, Artist.id == Show.artist_id).\
         filter(Artist.id == artist_id).\
-        filter(Show.start_time > datetime.utcnow()).all()
+        filter(Show.start_time >= datetime.utcnow()).all()
+
+    print(future_shows)
+    print(len(future_shows))
 
     f_shows = []
 
     for f_show in future_shows:
+        print(f_show.id, f_show.name, f_show.image_link, f_show.start_time)
         future_show = {
             "venue_id": f_show.id,
             "venue_name": f_show.name,
@@ -380,7 +384,6 @@ def edit_artist_submission(artist_id):
         name = request.form.get('name')
         city = request.form.get('city')
         state = request.form.get('state')
-        address = request.form.get('address')
         phone = request.form.get('phone')
         genres = request.form.getlist('genres')
         facebook_link = request.form.get('facebook_link')
@@ -409,14 +412,10 @@ def edit_artist_submission(artist_id):
         if facebook_link != artist.facebook_link:
             artist.facebook_link = facebook_link
 
-        print(seeking_venue)
-
         if seeking_venue == 'Yes':
             artist.seeking_venue = True
-            print('True')
         else:
             artist.seeking_venue = False
-            print('False')
 
         if seeking_description != artist.seeking_description:
             artist.seeking_description = seeking_description
