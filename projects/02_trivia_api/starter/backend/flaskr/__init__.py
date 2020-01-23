@@ -1,10 +1,7 @@
-import os
 from flask import Flask, request, abort, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import random
 
-from ..models import setup_db, Question, Category
+from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
@@ -24,7 +21,7 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
     setup_db(app)
-    CORS(app, resources={r"*/api/*": {origins: '*'}})
+    CORS(app, resources={r"/api/*": {"origins": '*'}})
 
     @app.after_request
     def after_request(response):
@@ -32,22 +29,40 @@ def create_app(test_config=None):
         response.headers.add('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS')
         return response
 
-    @app.route('/play')
+    @app.route('/')
+    def index():
+        questions_list = Question.query.all()
+        questions = paginate_categories(request, questions_list)
+
+        if len(questions) == 0:
+            abs(404)
+        return jsonify({
+            'questions': questions
+        })
+
+    @app.route('/categories')
     def get_categories():
         category_list = Category.query.all()
         categories = paginate_categories(request, category_list)
 
         if len(categories) == 0:
             abort(404)
+
         return jsonify({
             'categories': categories
         })
 
-    '''
-  @TODO: 
-  Create an endpoint to handle GET requests 
-  for all available categories.
-  '''
+    @app.route('/questions')
+    def get_questions():
+        questions_list = Question.query.all()
+        questions = paginate_categories(request, questions_list)
+
+        if len(questions) == 0:
+            abs(404)
+        return jsonify({
+            'questions': questions,
+            'total_questions': len(Question.query.all())
+        })
 
 
     '''
@@ -119,5 +134,12 @@ def create_app(test_config=None):
   Create error handlers for all expected errors 
   including 404 and 422. 
   '''
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({
+            "success": False,
+            "error": 404,
+            "message": "resource not found"
+        }), 404
 
     return app
