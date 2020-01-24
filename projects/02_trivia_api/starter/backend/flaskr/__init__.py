@@ -54,14 +54,21 @@ def create_app(test_config=None):
 
     @app.route('/questions')
     def get_questions():
+        #questions_list = Question.query.with_entities(Question.question, Question.category).all()
         questions_list = Question.query.all()
         questions = paginate_categories(request, questions_list)
+        categories = Category.query.all()
+        categories_list = [category.type for category in categories]
 
         if len(questions) == 0:
             abs(404)
+
         return jsonify({
+            'status': 200,
             'questions': questions,
-            'total_questions': len(Question.query.all())
+            'total_questions': len(Question.query.all()),
+            'categories': categories_list
+            # 'current_category': 'All'
         })
 
 
