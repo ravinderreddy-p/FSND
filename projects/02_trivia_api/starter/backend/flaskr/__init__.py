@@ -113,36 +113,16 @@ def create_app(test_config=None):
         except:
             abort(405)
 
-    '''
-  @TODO: 
-  Create an endpoint to POST a new question, 
-  which will require the question and answer text, 
-  category, and difficulty score.
+    @app.route('/categories/<int:id>/questions')
+    def get_questions_by_category(id):
+        selection = Question.query.filter(Question.category == id).all()
+        questions = paginate_categories(request, selection)
 
-  TEST: When you submit a question on the "Add" tab, 
-  the form will clear and the question will appear at the end of the last page
-  of the questions list in the "List" tab.  
-  '''
-
-    '''
-  @TODO: 
-  Create a POST endpoint to get questions based on a search term. 
-  It should return any questions for whom the search term 
-  is a substring of the question. 
-
-  TEST: Search by any phrase. The questions list will update to include 
-  only question that include that string within their question. 
-  Try using the word "title" to start. 
-  '''
-
-    '''
-  @TODO: 
-  Create a GET endpoint to get questions based on category. 
-
-  TEST: In the "List" tab / main screen, clicking on one of the 
-  categories in the left column will cause only questions of that 
-  category to be shown. 
-  '''
+        return jsonify({
+            'questions': questions,
+            'total_questions': len(questions),
+            'current_category': Category.query.with_entities(Category.type).filter(id == id).all()[0]
+        })
 
     '''
   @TODO: 
@@ -156,11 +136,6 @@ def create_app(test_config=None):
   and shown whether they were correct or not. 
   '''
 
-    '''
-  @TODO: 
-  Create error handlers for all expected errors 
-  including 404 and 422. 
-  '''
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({
