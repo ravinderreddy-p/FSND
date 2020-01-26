@@ -86,20 +86,30 @@ def create_app(test_config=None):
 
     @app.route('/questions', methods=['POST'])
     def create_question():
+        body = request.get_json()
+
+        new_question = body.get('question', None)
+        new_answer = body.get('answer', None)
+        new_category = body.get('category', None)
+        new_difficulty = body.get('difficulty', None)
+
+        search = body.get('searchTerm', None)
 
         try:
-            body = request.get_json()
+            if search:
+                selection = Question.query.order_by(Question.id).filter(Question.question.ilike('%{}%'.format(search)))
+                search_questions = paginate_categories(request, selection)
 
-            new_question = body.get('question')
-            new_answer = body.get('answer')
-            new_category = body.get('category')
-            new_difficulty = body.get('difficulty')
+                return jsonify({
+                    'success': True,
+                    'questions': search_questions
+                })
+            else:
+                question = Question(question=new_question, answer=new_answer, category=new_category,
+                                    difficulty=new_difficulty)
+                question.insert()
 
-            question = Question(question=new_question, answer=new_answer, category=new_category,
-                                difficulty=new_difficulty)
-            question.insert()
-
-            return redirect(url_for('get_questions'))
+                return redirect(url_for('get_questions'))
         except:
             abort(405)
 
