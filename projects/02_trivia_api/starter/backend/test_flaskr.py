@@ -18,6 +18,13 @@ class TriviaTestCase(unittest.TestCase):
         self.database_path = "postgres://{}/{}".format('localhost:5432', self.database_name)
         setup_db(self.app, self.database_path)
 
+        self.new_question = {
+            'question': 'Which is the capital city of UK',
+            'answer': 'London',
+            'category': 3,
+            'difficulty': 6
+        }
+
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
@@ -47,33 +54,53 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertTrue(data['categories'])
 
-    def test_get_questions(self):
-        res = self.client().get("/questions")
+    # def test_get_questions(self):
+    #     res = self.client().get("/questions")
+    #     data = json.loads(res.data)
+    #
+    #     self.assertEqual(res.status_code, 200)
+    #     self.assertTrue(data['questions'])
+    #     self.assertEqual(data['total_questions'], 18)
+    #     self.assertTrue(data['categories'])
+    #
+    # def test_delete_question(self):
+    #     res = self.client().delete("/questions/5")
+    #     data = json.loads(res.data)
+    #
+    #     question = Question.query.filter(Question.id == 5).one_or_none()
+    #
+    #     self.assertEqual(res.status_code, 200)
+    #     self.assertEqual(question, None)
+
+    def test_create_question(self):
+        res = self.client().post("/questions", json=self.new_question)
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
-        self.assertTrue(data['questions'])
-        self.assertEqual(data['total_questions'], 18)
-        self.assertTrue(data['categories'])
 
-    def test_delete_question(self):
-        res = self.client().get("/questions/5")
-        data = json.loads(res.data)
+    # def test_404_resource_not_found(self):
+    #     res = self.client().post("/questions/1")
+    #     data = json.loads(res.data)
+    #
+    #     self.assertEqual(res.status_code, 404)
+    #     self.assertEqual(data['success'], False)
+    #     self.assertEqual(data['message'], "resource not found")
 
-        question = Question.query.filter(Question.id == 5).one_or_none()
+    # def test_422_unprocessable(self):
+    #     res = self.client().delete('/questions/1000')
+    #     data = json.loads(res.data)
+    #
+    #     self.assertEqual(res.status_code, 422)
+    #     self.assertEqual(data['success'], False)
+    #     self.assertEqual(data['message'], 'Unprocessable')
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(question, None)
-
-
-
-    def test_404_resource_not_found(self):
-        res = self.client().get("/questions/1")
-        data = json.loads(res.data)
-
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(data['success'], False)
-        self.assertEqual(data['message'], "resource not found")
+    # def test_405_if_unable_to_add_question(self):
+    #     res = self.client().post('/questions/45', json=self.new_question)
+    #     data = json.loads(res.data)
+    #
+    #     self.assertEqual(res.status_code, 405)
+    #     self.assertEqual(data['success'], False)
+    #     self.assertEqual(data['message'], 'method not allowed')
 
 
 # Make the tests conveniently executable

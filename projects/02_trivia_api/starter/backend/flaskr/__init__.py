@@ -1,5 +1,6 @@
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, redirect, url_for
 from flask_cors import CORS
+from flask_restful.representations import json
 
 from models import setup_db, Question, Category
 
@@ -52,16 +53,15 @@ def create_app(test_config=None):
             'categories': categories
         })
 
-    @app.route('/questions')
+    @app.route('/questions', methods=["GET"])
     def get_questions():
-        #questions_list = Question.query.with_entities(Question.question, Question.category).all()
         questions_list = Question.query.all()
         questions = paginate_categories(request, questions_list)
         categories = Category.query.all()
         categories_list = [category.type for category in categories]
 
         if len(questions) == 0:
-            abs(404)
+            abort(404)
 
         return jsonify({
             'status': 200,
@@ -83,6 +83,25 @@ def create_app(test_config=None):
         return jsonify({
             'success': True
         })
+
+    @app.route('/questions', methods=['POST'])
+    def create_question():
+
+        try:
+            body = request.get_json()
+
+            new_question = body.get('question')
+            new_answer = body.get('answer')
+            new_category = body.get('category')
+            new_difficulty = body.get('difficulty')
+
+            question = Question(question=new_question, answer=new_answer, category=new_category,
+                                difficulty=new_difficulty)
+            question.insert()
+
+            return redirect(url_for('get_questions'))
+        except:
+            abort(405)
 
     '''
   @TODO: 
@@ -139,5 +158,21 @@ def create_app(test_config=None):
             "error": 404,
             "message": "resource not found"
         }), 404
+
+    @app.errorhandler(405)
+    def not_found(error):
+        return jsonify({
+            "success": False,
+            "error": 405,
+            "message": "method not allowed"
+        }), 405
+
+    @app.errorhandler(422)
+    def unprocessable(error):
+        return jsonify({
+            "success": False,
+            "error": 422,
+            "message": "Unprocessable"
+        }), 422
 
     return app
