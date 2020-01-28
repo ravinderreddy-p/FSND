@@ -1,6 +1,7 @@
 from flask import Flask, request, abort, jsonify, redirect, url_for
 from flask_cors import CORS
 from flask_restful.representations import json
+from sqlalchemy import func
 
 from models import setup_db, Question, Category
 
@@ -43,14 +44,15 @@ def create_app(test_config=None):
 
     @app.route('/categories')
     def get_categories():
-        category_list = Category.query.all()
-        categories = paginate_categories(request, category_list)
+        category_list = Category.query.with_entities(Category.type).all()
 
-        if len(categories) == 0:
-            abort(404)
+        #categories = paginate_categories(request, category_list)
+
+        # if len(categories) == 0:
+        #     abort(404)
 
         return jsonify({
-            'categories': categories
+            'categories': category_list
         })
 
     @app.route('/questions', methods=["GET"])
@@ -122,6 +124,18 @@ def create_app(test_config=None):
             'questions': questions,
             'total_questions': len(questions),
             'current_category': Category.query.with_entities(Category.type).filter(id == id).all()[0]
+        })
+
+    @app.route('/quizzes', methods=['POST'])
+    def play_quiz():
+        body = request.get_json()
+        previous_questions = body.get('previous_questions')
+        category = body.get('quiz_category')
+        category_id = int(category.get('id'))
+        questions = Question.query.filter(Question.category == category_id)
+        question = questions.order_by(func.random()).first()
+        return jsonify({
+            'question': question.format()
         })
 
     '''
