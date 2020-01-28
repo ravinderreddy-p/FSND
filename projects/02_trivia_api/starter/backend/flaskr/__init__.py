@@ -1,6 +1,5 @@
 from flask import Flask, request, abort, jsonify, redirect, url_for
 from flask_cors import CORS
-from flask_restful.representations import json
 from sqlalchemy import func
 
 from models import setup_db, Question, Category
@@ -31,25 +30,23 @@ def create_app(test_config=None):
         response.headers.add('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS')
         return response
 
-    @app.route('/')
-    def index():
-        questions_list = Question.query.all()
-        questions = paginate_categories(request, questions_list)
-
-        if len(questions) == 0:
-            abs(404)
-        return jsonify({
-            'questions': questions
-        })
+    # @app.route('/')
+    # def index():
+    #     questions_list = Question.query.all()
+    #     questions = paginate_categories(request, questions_list)
+    #
+    #     if len(questions) == 0:
+    #         abs(404)
+    #     return jsonify({
+    #         'questions': questions
+    #     })
 
     @app.route('/categories')
     def get_categories():
         category_list = Category.query.with_entities(Category.type).all()
 
-        #categories = paginate_categories(request, category_list)
-
-        # if len(categories) == 0:
-        #     abort(404)
+        if len(category_list) == 0:
+            abort(404)
 
         return jsonify({
             'categories': category_list
@@ -75,7 +72,6 @@ def create_app(test_config=None):
 
     @app.route('/questions/<int:question_id>', methods=['DELETE'])
     def delete_question(question_id):
-
         question = Question.query.filter(Question.id == question_id).one_or_none()
 
         if question is None:
@@ -137,18 +133,6 @@ def create_app(test_config=None):
         return jsonify({
             'question': question.format()
         })
-
-    '''
-  @TODO: 
-  Create a POST endpoint to get questions to play the quiz. 
-  This endpoint should take category and previous question parameters 
-  and return a random questions within the given category, 
-  if provided, and that is not one of the previous questions. 
-
-  TEST: In the "Play" tab, after a user selects "All" or a category,
-  one question at a time is displayed, the user is allowed to answer
-  and shown whether they were correct or not. 
-  '''
 
     @app.errorhandler(404)
     def not_found(error):
