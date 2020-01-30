@@ -30,17 +30,6 @@ def create_app(test_config=None):
         response.headers.add('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS')
         return response
 
-    # @app.route('/')
-    # def index():
-    #     questions_list = Question.query.all()
-    #     questions = paginate_categories(request, questions_list)
-    #
-    #     if len(questions) == 0:
-    #         abs(404)
-    #     return jsonify({
-    #         'questions': questions
-    #     })
-
     @app.route('/categories')
     def get_categories():
         category_list = Category.query.with_entities(Category.type).all()
@@ -72,15 +61,18 @@ def create_app(test_config=None):
 
     @app.route('/questions/<int:question_id>', methods=['DELETE'])
     def delete_question(question_id):
-        question = Question.query.filter(Question.id == question_id).one_or_none()
+        try:
+            question = Question.query.filter(Question.id == question_id).one_or_none()
 
-        if question is None:
-            abort(404)
+            if question is None:
+                abort(404)
 
-        question.delete()
-        return jsonify({
-            'success': True
-        })
+            question.delete()
+            return jsonify({
+                'success': True
+            })
+        except:
+            abort(405)
 
     @app.route('/questions', methods=['POST'])
     def create_question():
@@ -113,6 +105,10 @@ def create_app(test_config=None):
 
     @app.route('/categories/<int:id>/questions')
     def get_questions_by_category(id):
+
+        if not id:
+            return abort(400, 'Invalid category id')
+
         selection = Question.query.filter(Question.category == id).all()
         questions = paginate_categories(request, selection)
 
