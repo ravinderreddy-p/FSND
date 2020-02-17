@@ -19,18 +19,20 @@ Route handler for display existing drinks.
 '''
 @app.route('/drinks')
 def get_drinks():
+    # get all drinks
     drinks = Drink.query.all()
 
-    # 404 if not drinks found
+    # 404 if no drinks found
     if len(drinks) == 0:
         abort(404)
 
-    # format using .short
+    # format using .short()
     drinks_short = [drink.short() for drink in drinks]
 
+    # return drinks
     return jsonify({
-        "success": True,
-        "drinks": drinks_short
+        'success': True,
+        'drinks': drinks_short
     })
 
 
@@ -38,9 +40,9 @@ def get_drinks():
 Route handler for get drink-details.
 Requires 'get:drinks-details' permission.
 '''
-@app.route('/drinks-details')
-@requires_auth('get:drinks-details')
-def get_drink_details(jwt):
+@app.route('/drinks-detail')
+@requires_auth('get:drinks-detail')
+def get_drinks_detail(jwt):
     drinks = Drink.query.all()
 
     if len(drinks) == 0:
@@ -59,14 +61,14 @@ Requires 'post:drinks' permission.
 '''
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
-def add_drink():
+def add_drink(jwt):
     # get the drink info from request
     body = request.get_json()
     title = body['title']
     recipe = body['recipe']
 
     # create new drink
-    drink = Drink(title=title, recipe = json.dumps(recipe))
+    drink = Drink(title=title, recipe=json.dumps(recipe))
 
     try:
         # add drink to database
