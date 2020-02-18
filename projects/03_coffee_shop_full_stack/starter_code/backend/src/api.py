@@ -38,8 +38,8 @@ def get_drinks():
 Route handler for get drink-details.
 Requires 'get:drinks-details' permission.
 '''
-@app.route('/drinks-details')
-@requires_auth('get:drinks-details')
+@app.route('/drinks-detail')
+@requires_auth('get:drinks-detail')
 def get_drink_details(jwt):
     drinks = Drink.query.all()
 
@@ -59,7 +59,7 @@ Requires 'post:drinks' permission.
 '''
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
-def add_drink():
+def add_drink(jwt):
     # get the drink info from request
     body = request.get_json()
     title = body['title']
