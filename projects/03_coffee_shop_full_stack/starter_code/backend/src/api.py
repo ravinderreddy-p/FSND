@@ -85,7 +85,7 @@ def add_drink(jwt):
 Route handler for editing existing drink.
 Requires 'patch:drinks' permission.
 '''
-@app.route('/drinks', methods=['PATCH'])
+@app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
 def edit_drinks_by_id(*args, **kwargs):
     #get ID from the kwargs
@@ -132,7 +132,7 @@ def edit_drinks_by_id(*args, **kwargs):
 Route handler for delete existing drink.
 Requires 'delete:drinks' permission.
 '''
-@app.route('/drinks', methods=['DELETE'])
+@app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
 def delete_drinks(*args, **kwargs):
     # get ID from kwargs
